@@ -166,7 +166,7 @@ class VAC_Data_Collector
                 'product' => array(
                     'enabled' => true,
                     'limit' => 25,  // Giảm từ 100 xuống 25
-                    'fields' => array('title', 'description', 'price', 'categories', 'attributes', 'stock'),  // ✅ Tất cả fields quan trọng
+                    'fields' => array('title', 'description', 'price', 'categories', 'attributes', 'stock', 'image'),  // ✅ Thêm image
                     'label' => 'Sản phẩm'
                 )
             ),
@@ -386,11 +386,60 @@ class VAC_Data_Collector
                 }
             }
 
-            // Featured image
+            // Featured image and gallery (WooCommerce)
             if (in_array('image', $fields)) {
                 $image_url = get_the_post_thumbnail_url($post->ID, 'medium');
                 if ($image_url) {
                     $item['image'] = $image_url;
+                }
+
+                // Gallery images for WooCommerce products
+                if ($post_type === 'product') {
+                    $product = wc_get_product($post->ID);
+                    if ($product) {
+                        $gallery_ids = $product->get_gallery_image_ids();
+                        if (!empty($gallery_ids)) {
+                            $gallery_urls = array();
+                            foreach ($gallery_ids as $attachment_id) {
+                                $gallery_url = wp_get_attachment_url($attachment_id);
+                                if ($gallery_url) {
+                                    $gallery_urls[] = $gallery_url;
+                                }
+                            }
+                            if (!empty($gallery_urls)) {
+                                $item['gallery_images'] = $gallery_urls;
+                            }
+                        }
+
+                        // Variation images (for variable products)
+                        if ($product->is_type('variable')) {
+                            $variations = $product->get_available_variations();
+                            $variation_images = array();
+
+                            foreach ($variations as $variation) {
+                                if (!empty($variation['image']['url'])) {
+                                    $variation_key = '';
+                                    // Build variation key from attributes
+                                    if (!empty($variation['attributes'])) {
+                                        $attrs = array();
+                                        foreach ($variation['attributes'] as $attr_name => $attr_value) {
+                                            $attrs[] = $attr_value;
+                                        }
+                                        $variation_key = implode(' - ', $attrs);
+                                    }
+
+                                    $variation_images[] = array(
+                                        'variation' => $variation_key,
+                                        'image' => $variation['image']['url']
+                                    );
+                                }
+                            }
+
+                            if (!empty($variation_images)) {
+                                $item['variation_images'] = $variation_images;
+                            }
+                        }
+                    }
                 }
             }
 
@@ -634,6 +683,26 @@ class VAC_Data_Collector
                         if (!empty($field_value) || $field_value === '0' || $field_value === 0) {
                             $output .= "  - {$label}: {$field_value}\n";
                         }
+                    }
+                }
+
+                // ✅ SHOW IMAGES
+                if (!empty($product['image'])) {
+                    $output .= "Ảnh sản phẩm: ![Ảnh]({$product['image']})\n";
+                }
+
+                if (!empty($product['gallery_images'])) {
+                    $output .= "Thư viện ảnh:\n";
+                    foreach ($product['gallery_images'] as $idx => $img_url) {
+                        $output .= "  - ![Ảnh " . ($idx + 1) . "]({$img_url})\n";
+                    }
+                }
+
+                if (!empty($product['variation_images'])) {
+                    $output .= "Ảnh theo biến thể:\n";
+                    foreach ($product['variation_images'] as $var) {
+                        $variation_name = !empty($var['variation']) ? $var['variation'] : 'Mặc định';
+                        $output .= "  - {$variation_name}: ![Ảnh]({$var['image']})\n";
                     }
                 }
 

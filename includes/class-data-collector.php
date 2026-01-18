@@ -386,58 +386,57 @@ class VAC_Data_Collector
                 }
             }
 
-            // Featured image and gallery (WooCommerce)
-            if (in_array('image', $fields)) {
-                $image_url = get_the_post_thumbnail_url($post->ID, 'medium');
-                if ($image_url) {
-                    $item['image'] = $image_url;
-                }
+            // Featured image and gallery - ALWAYS LOAD FOR ALL POST TYPES
+            // Always try to get featured image first
+            $image_url = get_the_post_thumbnail_url($post->ID, 'medium');
+            if ($image_url) {
+                $item['image'] = $image_url;
+            }
 
-                // Gallery images for WooCommerce products
-                if ($post_type === 'product') {
-                    $product = wc_get_product($post->ID);
-                    if ($product) {
-                        $gallery_ids = $product->get_gallery_image_ids();
-                        if (!empty($gallery_ids)) {
-                            $gallery_urls = array();
-                            foreach ($gallery_ids as $attachment_id) {
-                                $gallery_url = wp_get_attachment_url($attachment_id);
-                                if ($gallery_url) {
-                                    $gallery_urls[] = $gallery_url;
-                                }
+            // Gallery images for WooCommerce products
+            if ($post_type === 'product' && class_exists('WooCommerce')) {
+                $product = wc_get_product($post->ID);
+                if ($product) {
+                    $gallery_ids = $product->get_gallery_image_ids();
+                    if (!empty($gallery_ids)) {
+                        $gallery_urls = array();
+                        foreach ($gallery_ids as $attachment_id) {
+                            $gallery_url = wp_get_attachment_url($attachment_id);
+                            if ($gallery_url) {
+                                $gallery_urls[] = $gallery_url;
                             }
-                            if (!empty($gallery_urls)) {
-                                $item['gallery_images'] = $gallery_urls;
+                        }
+                        if (!empty($gallery_urls)) {
+                            $item['gallery_images'] = $gallery_urls;
+                        }
+                    }
+
+                    // Variation images (for variable products)
+                    if ($product->is_type('variable')) {
+                        $variations = $product->get_available_variations();
+                        $variation_images = array();
+
+                        foreach ($variations as $variation) {
+                            if (!empty($variation['image']['url'])) {
+                                $variation_key = '';
+                                // Build variation key from attributes
+                                if (!empty($variation['attributes'])) {
+                                    $attrs = array();
+                                    foreach ($variation['attributes'] as $attr_name => $attr_value) {
+                                        $attrs[] = $attr_value;
+                                    }
+                                    $variation_key = implode(' - ', $attrs);
+                                }
+
+                                $variation_images[] = array(
+                                    'variation' => $variation_key,
+                                    'image' => $variation['image']['url']
+                                );
                             }
                         }
 
-                        // Variation images (for variable products)
-                        if ($product->is_type('variable')) {
-                            $variations = $product->get_available_variations();
-                            $variation_images = array();
-
-                            foreach ($variations as $variation) {
-                                if (!empty($variation['image']['url'])) {
-                                    $variation_key = '';
-                                    // Build variation key from attributes
-                                    if (!empty($variation['attributes'])) {
-                                        $attrs = array();
-                                        foreach ($variation['attributes'] as $attr_name => $attr_value) {
-                                            $attrs[] = $attr_value;
-                                        }
-                                        $variation_key = implode(' - ', $attrs);
-                                    }
-
-                                    $variation_images[] = array(
-                                        'variation' => $variation_key,
-                                        'image' => $variation['image']['url']
-                                    );
-                                }
-                            }
-
-                            if (!empty($variation_images)) {
-                                $item['variation_images'] = $variation_images;
-                            }
+                        if (!empty($variation_images)) {
+                            $item['variation_images'] = $variation_images;
                         }
                     }
                 }

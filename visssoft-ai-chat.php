@@ -263,8 +263,9 @@ class Visssoft_AI_Chat
         wp_localize_script('vac-admin-js', 'vacAdmin', array(
             'ajaxUrl' => admin_url('admin-ajax.php'),
             'restUrl' => rest_url('visssoft-ai-chat/v1/'),
-            'nonce' => wp_create_nonce('wp_rest'),
+            'nonce' => wp_create_nonce('vac_admin_nonce'),
         ));
+
     }
 
     public function enqueue_frontend_scripts()

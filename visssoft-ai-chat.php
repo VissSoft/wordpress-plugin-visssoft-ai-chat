@@ -3,7 +3,7 @@
  * Plugin Name: Visssoft AI Chat Support
  * Plugin URI: https://visssoft.com/plugins/ai-chat
  * Description: Plugin chat hỗ trợ khách hàng với AI (Gemini) - Tự động thu thập dữ liệu từ Post Types
- * Version: 2.0.0
+ * Version: 2.0.1
  * Author: Visssoft
  * Author URI: https://visssoft.com
  * Text Domain: visssoft-ai-chat
@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Plugin constants
-define('VAC_VERSION', '2.0.1');
+define('VAC_VERSION', '2.0.2');
 define('VAC_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('VAC_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('VAC_PLUGIN_BASENAME', plugin_basename(__FILE__));
